@@ -4,176 +4,47 @@ Aplikacja do organizowania lokalnych aktywności sportowych. Pozwala przegląda�
 
 ## Stack
 
-| Obszar | Technologia |
-|--------|-------------|
-| Framework | Flutter 3.41.9 (FVM) |
-| State management | BLoC |
-| DI | GetIt + Injectable |
-| Nawigacja | auto_route |
-| Baza lokalna | Drift (SQLite) |
-| Sieć | Retrofit + Dio |
-| Modele | Freezed + json_serializable |
-| Mapowanie | auto_mappr |
-| Mapa | flutter_map (OpenStreetMap) |
-| Testy | bloc_test, mocktail, mockito |
-| CI/CD | GitHub Actions |
+| Obszar           | Technologia                  |
+| ---------------- | ---------------------------- |
+| Framework        | Flutter 3.41.9 (FVM)         |
+| State management | BLoC                         |
+| DI               | GetIt + Injectable           |
+| Nawigacja        | auto_route                   |
+| Baza lokalna     | Drift (SQLite)               |
+| Sieć             | Retrofit + Dio               |
+| Modele           | Freezed + json_serializable  |
+| Mapowanie        | auto_mappr                   |
+| Mapa             | flutter_map (OpenStreetMap)  |
+| Testy            | bloc_test, mocktail, mockito |
+| CI/CD            | GitHub Actions               |
 
 ## Architektura
 
-Projekt stosuje **Clean Architecture** z podziałem na warstwy w obrębie feature’ów (`features/<nazwa>/`). Zależności idą **tylko do wewnątrz**: presentation → domain ← data.
-
-```mermaid
-flowchart TB
-  subgraph presentation["Presentation"]
-    UI["Pages / Widgets"]
-    BLoC["ActivitiesBloc"]
-  end
-
-  subgraph domain["Domain"]
-    UC["Use cases"]
-    Entity["Activity"]
-    RepoIface["ActivityRepository"]
-  end
-
-  subgraph data["Data"]
-    RepoImpl["ActivityRepositoryImpl"]
-    Remote["ActivityRemoteDataSource"]
-    Local["ActivityLocalDataSource"]
-    API["Retrofit API client"]
-    DB["Drift / SQLite"]
-  end
-
-  subgraph core["Core"]
-    DI["GetIt + Injectable"]
-    Router["AppRouter"]
-    Dio["DioModule"]
-    Mappr["Mappr"]
-  end
-
-  UI --> BLoC
-  BLoC --> UC
-  UC --> RepoIface
-  RepoImpl -. implementuje .-> RepoIface
-  RepoImpl --> Remote
-  RepoImpl --> Local
-  RepoImpl --> Mappr
-  Remote --> API
-  Local --> DB
-  BLoC --> DI
-  UI --> Router
-```
-
-### Struktura katalogów
-
-```
+Projekt stosuje **Clean Architecture** z podziałem na trzy warstwy w obrębie feature'ów. Zależności idą tylko do wewnątrz: presentation → domain ← data.
 lib/
 ├── core/
-│   ├── di/           # GetIt, Injectable, Mappr
-│   ├── network/      # Dio (base URL, interceptory)
-│   └── router/       # auto_route — trasy aplikacji
+│ ├── di/ # GetIt, Injectable, Mappr
+│ ├── network/ # Dio (base URL)
+│ └── router/ # auto_route
 └── features/
-    └── activities/
-        ├── domain/
-        │   ├── entities/       # Activity — czysty model biznesowy
-        │   ├── repositories/   # kontrakt ActivityRepository
-        │   └── usecases/       # GetActivities, AddActivity, JoinActivity
-        ├── data/
-        │   ├── models/         # ActivityModel (JSON), ActivityTable (Drift)
-        │   ├── datasources/
-        │   │   ├── remote/     # Retrofit + ActivityRemoteDataSource
-        │   │   └── local/      # Drift + ActivityLocalDataSource
-        │   └── repositories/   # ActivityRepositoryImpl
-        └── presentation/
-            ├── bloc/           # ActivitiesBloc, Event, State
-            └── pages/          # mapa, lista, szczegóły, dodawanie
-```
-
-### Odpowiedzialność warstw
-
-| Warstwa | Zna | Nie zna |
-|---------|-----|---------|
-| **Domain** | encje, reguły biznesowe, interfejs repozytorium | Flutter, Dio, Drift, JSON |
-| **Data** | API, SQLite, mapowanie Model ↔ Entity | Widgety, BLoC |
-| **Presentation** | UI, stany BLoC, wywołania use case’ów | szczegóły HTTP/SQL |
-
-### Nawigacja
-
-`MainPage` hostuje zakładki (mapa + lista) przez `AutoTabsScaffold`. Osobne trasy: dodawanie aktywności, szczegóły.
+└── activities/
+├── domain/
+│ ├── entities/
+│ ├── repositories/
+│ └── usecases/
+├── data/
+│ ├── models/
+│ ├── datasources/
+│ └── repositories/
+└── presentation/
+├── bloc/
+└── pages/
 
 ## Przepływ danych
 
-### Odczyt listy aktywności (offline-first)
-
-Repozytorium najpierw próbuje sieci. Po sukcesie **cache’uje** odpowiedź w SQLite. Przy błędzie sieci zwraca dane z lokalnej bazy.
-
-```mermaid
-sequenceDiagram
-  participant UI as Page / Widget
-  participant BLoC as ActivitiesBloc
-  participant UC as GetActivitiesUsecase
-  participant Repo as ActivityRepositoryImpl
-  participant Remote as RemoteDataSource
-  participant API as json-server
-  participant DB as Drift (SQLite)
-
-  UI->>BLoC: LoadActivities
-  BLoC->>UC: call()
-  UC->>Repo: getActivities()
-  Repo->>Remote: getActivities()
-  Remote->>API: GET /activities
-  API-->>Remote: JSON
-  Remote-->>Repo: List ActivityModel
-  Repo->>DB: upsert (batch)
-  Repo-->>UC: List Activity (via Mappr)
-  UC-->>BLoC: List Activity
-  BLoC-->>UI: ActivitiesState.loaded
-
-  Note over Repo,DB: Błąd sieci
-  Repo->>DB: getActivities()
-  DB-->>Repo: ActivityTableData
-  Repo-->>UC: List Activity (mapowanie ręczne)
-```
-
-**Mapowanie przy odczycie:**
-
-| Źródło | Typ pośredni | Encja domenowa |
-|--------|--------------|----------------|
-| API | `ActivityModel` | `Activity` (auto_mappr) |
-| SQLite (fallback) | `ActivityTableData` | `Activity` (konstruktor) |
-
-### Zapis nowej aktywności
-
-```mermaid
-sequenceDiagram
-  participant UI as AddActivityPage
-  participant BLoC as ActivitiesBloc
-  participant UC as AddActivityUsecase
-  participant Repo as ActivityRepositoryImpl
-  participant Remote as RemoteDataSource
-  participant API as json-server
-
-  UI->>BLoC: AddActivity(activity)
-  BLoC->>UC: call(activity)
-  UC->>Repo: createActivity(activity)
-  Repo->>Remote: createActivity(ActivityModel)
-  Remote->>API: POST /activities
-  API-->>Remote: ActivityModel
-  Remote-->>Repo: ActivityModel
-  Repo-->>BLoC: Activity
-  BLoC->>UC: GetActivities (odświeżenie listy)
-  BLoC-->>UI: ActivitiesState.loaded
-```
-
-### Inicjalizacja aplikacji
-
-```
-main()
-  → configureDependencies()   # GetIt + Injectable
-  → SportSpotApp
-      → BlocProvider(ActivitiesBloc)
-      → MaterialApp.router(AppRouter)
-      → ActivitiesEvent.loadActivities()
-```
+Repozytorium stosuje strategię **offline-first** — przy błędzie sieci zwraca dane z lokalnego cache (Drift/SQLite).
+API JSON → ActivityModel → (auto_mappr) → Activity → BLoC → UI
+SQLite → ActivityTableData → Activity → BLoC → UI
 
 ## Uruchomienie
 
@@ -189,4 +60,4 @@ main()
 fvm flutter test
 ```
 
-Struktura testów odzwierciedla warstwy: use case’y (domain), repozytorium (data), BLoC (presentation).
+Testy pokrywają warstwy: use case'y (Mocktail), repozytorium (Mockito), BLoC (bloc_test).
