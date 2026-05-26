@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:injectable/injectable.dart';
 import 'package:sport_spot/features/activities/data/datasources/local/app_database.dart';
 
