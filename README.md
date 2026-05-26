@@ -21,6 +21,8 @@ Aplikacja do organizowania lokalnych aktywności sportowych. Pozwala przegląda�
 ## Architektura
 
 Projekt stosuje **Clean Architecture** z podziałem na trzy warstwy w obrębie feature'ów. Zależności idą tylko do wewnątrz: presentation → domain ← data.
+
+```
 lib/
 ├── core/
 │ ├── di/ # GetIt, Injectable, Mappr
@@ -39,6 +41,7 @@ lib/
 └── presentation/
 ├── bloc/
 └── pages/
+```
 
 ## Przepływ danych
 
