@@ -1,0 +1,49 @@
+{
+  "activities": [
+    {
+      "id": "1",
+      "title": "Piłka nożna na Orliku",
+      "sport": "football",
+      "latitude": 50.0614,
+      "longitude": 19.9366,
+      "scheduled_at": 1716300000000,
+      "max_participants": 10,
+      "current_participants": 3,
+      "organizer_id": "user_1"
+    },
+    {
+      "id": "2",
+      "title": "Koszykówka w parku",
+      "sport": "basketball",
+      "latitude": 50.0654,
+      "longitude": 19.9245,
+      "scheduled_at": 1716386400000,
+      "max_participants": 8,
+      "current_participants": 2,
+      "organizer_id": "user_2"
+    },
+    {
+      "id": "3",
+      "title": "Tenis ziemny",
+      "sport": "tennis",
+      "latitude": 50.0587,
+      "longitude": 19.9423,
+      "scheduled_at": 1716472800000,
+      "max_participants": 2,
+      "current_participants": 1,
+      "organizer_id": "user_1"
+    },
+    {
+      "id": "Maej8QE-dwg",
+      "title": "te",
+      "sport": "te",
+      "latitude": 50,
+      "longitude": 20,
+      "scheduled_at": 1779801392422,
+      "max_participants": 2,
+      "current_participants": 0,
+      "organizer_id": "user_1"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}
