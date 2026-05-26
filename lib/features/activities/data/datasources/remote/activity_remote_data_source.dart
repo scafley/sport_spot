@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:injectable/injectable.dart';
 import 'package:sport_spot/features/activities/data/datasources/remote/activity_api_client.dart';
 import 'package:sport_spot/features/activities/data/models/activity_model.dart';
@@ -17,7 +19,7 @@ class ActivityRemoteDataSourceImpl implements ActivityRemoteDataSource {
   @override
   Future<List<ActivityModel>> getActivities() async {
     final result = await _apiClient.getActivities();
-    print('Remote data: ${result.length}');
+    log('Remote data: ${result.length}');
     return result;
   }
 

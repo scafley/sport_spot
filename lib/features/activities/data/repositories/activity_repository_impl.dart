@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:drift/drift.dart';
 import 'package:injectable/injectable.dart';
 import 'package:sport_spot/features/activities/data/datasources/local/activity_local_data_source.dart';
@@ -7,7 +9,6 @@ import 'package:sport_spot/features/activities/data/models/activity_model.dart';
 import 'package:sport_spot/features/activities/domain/entities/activity.dart';
 import 'package:sport_spot/features/activities/domain/repositories/activity_repository.dart';
 import 'package:sport_spot/core/di/mappr.dart';
-import 'package:sport_spot/core/di/mappr.auto_mappr.dart';
 
 @LazySingleton(as: ActivityRepository)
 class ActivityRepositoryImpl implements ActivityRepository {
@@ -51,7 +52,7 @@ class ActivityRepositoryImpl implements ActivityRepository {
 
       return remoteModels.map(_toActivity).toList();
     } catch (e) {
-      print('Repository error: $e');
+      log('Repository error: $e');
       final localModels = await _localDataSource.getActivities();
       return localModels.map(_fromTableData).toList();
     }

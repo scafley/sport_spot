@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:sport_spot/features/activities/domain/usecases/add_activity_usecase.dart';
@@ -29,10 +31,10 @@ class ActivitiesBloc extends Bloc<ActivitiesEvent, ActivitiesState> {
     emit(const ActivitiesState.loading());
     try {
       final activities = await _getActivitiesUseCase();
-      print('Zaladowano aktywnosci: ${activities.length}');
+      log('Zaladowano aktywnosci: ${activities.length}');
       emit(ActivitiesState.loaded(activities));
     } catch (e) {
-      print('Blad: $e');
+      log('Blad: $e');
       emit(ActivitiesState.error(e.toString()));
     }
   }
@@ -64,10 +66,4 @@ class ActivitiesBloc extends Bloc<ActivitiesEvent, ActivitiesState> {
       emit(ActivitiesState.error(e.toString()));
     }
   }
-
-  // ActivitesBloc() : super(_Initial()) {
-  //   on<ActivitesEvent>((event, emit) {
-  //     // TODO: implement event handler
-  //   });
-  // }
 }
